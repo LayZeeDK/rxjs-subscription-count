@@ -1,0 +1,30 @@
+{
+  "name": "rxjs-subscription-count",
+  "description": "subscriptionCount operator for RxJS - Count subscriptions to observables. Useful for testing.",
+  "version": "1.0.0",
+  "license": "MIT",
+  "author": {
+    "name": "Lars Gyrup Brink Nielsen",
+    "email": "larsbrinknielsen@gmail.com",
+    "url": "https://github.com/LayZeeDK"
+  },
+  "homepage": "https://github.com/LayZeeDK/rxjs-subscription-count",
+  "bugs": "https://github.com/LayZeeDK/rxjs-subscription-count/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LayZeeDK/rxjs-subscription-count.git"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "tag": "unknown"
+  },
+  "keywords": [
+    "subscriptioncount",
+    "rxjs",
+    "operator",
+    "operators"
+  ],
+  "peerDependencies": {
+    "rxjs": "^6.0.0"
+  }
+}
