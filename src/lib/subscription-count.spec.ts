@@ -1,10 +1,22 @@
+import * as chai from 'chai';
 import { interval, Observable, Subject, Subscription } from 'rxjs';
 import { takeUntil, toArray } from 'rxjs/operators';
+import { SinonSpy, spy } from 'sinon';
+import * as sinonChai from 'sinon-chai';
 
 import { subscriptionCount } from './subscription-count';
 
+chai.use(sinonChai);
+const { expect } = chai;
+
+function observedValue<T>(observer: SinonSpy): T {
+  const [first] = observer.getCall(observer.callCount - 1).args;
+
+  return first;
+}
+
 describe((subscriptionCount as any).name, () => {
-  const counter: jasmine.Spy = jasmine.createSpy('counter');
+  const counter: SinonSpy = spy();
   const destroy: Subject<void> = new Subject();
   const countedInterval$: Observable<number> = interval(0).pipe(
     subscriptionCount({ next: counter }),
@@ -12,12 +24,12 @@ describe((subscriptionCount as any).name, () => {
   );
 
   function currentCount(): number {
-    return counter.calls.mostRecent().args[0];
+    return counter.lastCall.args[0];
   }
 
   afterEach(() => {
     destroy.next();
-    counter.calls.reset();
+    counter.resetHistory();
   });
 
   afterAll(() => {
@@ -28,8 +40,8 @@ describe((subscriptionCount as any).name, () => {
     it('notifies the counter on subscription', () => {
       countedInterval$.subscribe();
 
-      expect(counter).toHaveBeenCalledTimes(1);
-      expect(counter).toHaveBeenCalledWith(1);
+      expect(counter.calledOnce).to.be.true;
+      expect(observedValue(counter)).to.equal(1);
     });
 
     it('notifies the counter on multiple subscriptions', () => {
@@ -37,8 +49,8 @@ describe((subscriptionCount as any).name, () => {
       countedInterval$.subscribe();
       countedInterval$.subscribe();
 
-      expect(counter).toHaveBeenCalledTimes(3);
-      expect(currentCount()).toBe(3);
+      expect(counter.calledThrice).to.be.true;
+      expect(currentCount()).to.equal(3);
     });
 
     it('notifies the counter on unsubscription', () => {
@@ -46,8 +58,8 @@ describe((subscriptionCount as any).name, () => {
 
       subscription.unsubscribe();
 
-      expect(counter).toHaveBeenCalledTimes(2);
-      expect(currentCount()).toBe(0);
+      expect(counter.calledTwice).to.be.true;
+      expect(currentCount()).to.equal(0);
     });
 
     it('notifies the counter on multiple unsubscriptions', () => {
@@ -58,12 +70,12 @@ describe((subscriptionCount as any).name, () => {
       firstSubscription.unsubscribe();
       secondSubscription.unsubscribe();
 
-      expect(counter).toHaveBeenCalledTimes(5);
-      expect(currentCount()).toBe(1);
+      expect(counter.callCount).to.equal(5);
+      expect(currentCount()).to.equal(1);
     });
 
     it('does not notify the counter before subscription to the source', () => {
-      expect(counter).toHaveBeenCalledTimes(0);
+      expect(counter.called).to.be.false;
     });
   });
 
@@ -76,7 +88,7 @@ describe((subscriptionCount as any).name, () => {
         subscriptionCount({ next: counter }),
         takeUntil(destroy),
       );
-      const primitiveObserver: jasmine.Spy = jasmine.createSpy('primitive observer');
+      const primitiveObserver: SinonSpy = spy();
       countedPrimitive$.pipe(
         toArray(),
       ).subscribe(primitiveObserver);
@@ -89,7 +101,7 @@ describe((subscriptionCount as any).name, () => {
       primitiveSource.next(undefined);
       primitiveSource.complete();
 
-      expect(primitiveObserver).toHaveBeenCalledWith([
+      expect(primitiveObserver.lastCall.args[0]).to.deep.equal([
         false,
         1,
         'two',
@@ -106,7 +118,7 @@ describe((subscriptionCount as any).name, () => {
           subscriptionCount({ next: counter }),
           takeUntil(destroy),
         );
-      const arrayObserver: jasmine.Spy = jasmine.createSpy('array observer');
+      const arrayObserver: SinonSpy = spy();
       countedArray$.subscribe(arrayObserver);
       const booleans: ReadonlyArray<boolean> =
         [true, false, false, false, true];
@@ -124,12 +136,16 @@ describe((subscriptionCount as any).name, () => {
       arraySource.next(nulls);
       arraySource.next(undefineds);
 
-      expect(arrayObserver.calls.argsFor(0)[0]).toBe(booleans);
-      expect(arrayObserver.calls.argsFor(1)[0]).toBe(numbers);
-      expect(arrayObserver.calls.argsFor(2)[0]).toBe(strings);
-      expect(arrayObserver.calls.argsFor(3)[0]).toBe(symbols);
-      expect(arrayObserver.calls.argsFor(4)[0]).toBe(nulls);
-      expect(arrayObserver.calls.argsFor(5)[0]).toBe(undefineds);
+      const emittedValues: ReadonlyArray<Primitive> =
+        arrayObserver.getCalls().map(x => x.args[0]);
+      expect(emittedValues).to.deep.equal([
+        booleans,
+        numbers,
+        strings,
+        symbols,
+        nulls,
+        undefineds,
+      ]);
     });
 
     it('leaves objects untouched', () => {
@@ -142,7 +158,7 @@ describe((subscriptionCount as any).name, () => {
         subscriptionCount({ next: counter }),
         takeUntil(destroy),
       );
-      const objectObserver: jasmine.Spy = jasmine.createSpy('object observer');
+      const objectObserver: SinonSpy = spy();
       countedObject$.subscribe(objectObserver);
       const zero: Value<boolean> = { value: false };
       const one: Value<number> = { value: 1 };
@@ -158,12 +174,16 @@ describe((subscriptionCount as any).name, () => {
       objectSource.next(four);
       objectSource.next(five);
 
-      expect(objectObserver.calls.argsFor(0)[0]).toBe(zero);
-      expect(objectObserver.calls.argsFor(1)[0]).toBe(one);
-      expect(objectObserver.calls.argsFor(2)[0]).toBe(two);
-      expect(objectObserver.calls.argsFor(3)[0]).toBe(three);
-      expect(objectObserver.calls.argsFor(4)[0]).toBe(four);
-      expect(objectObserver.calls.argsFor(5)[0]).toBe(five);
+      const emittedValues: ReadonlyArray<Value<Primitive>> =
+        objectObserver.getCalls().map(x => x.args[0]);
+      expect(emittedValues).to.deep.equal([
+        zero,
+        one,
+        two,
+        three,
+        four,
+        five,
+      ]);
     });
   });
 });
