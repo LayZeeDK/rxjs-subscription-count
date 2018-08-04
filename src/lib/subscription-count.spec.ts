@@ -15,7 +15,7 @@ function observedValue<T>(observer: SinonSpy): T {
   return first;
 }
 
-describe((subscriptionCount as any).name, () => {
+describe('subscriptionCount', () => {
   const counter: SinonSpy = spy();
   const destroy: Subject<void> = new Subject();
   const countedInterval$: Observable<number> = interval(0).pipe(
