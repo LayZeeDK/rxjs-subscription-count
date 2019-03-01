@@ -1,7 +1,7 @@
 {
   "name": "rxjs-subscription-count",
   "description": "subscriptionCount operator for RxJS - Count subscriptions to observables. Useful for testing observable flattening strategies.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "license": "MIT",
   "author": {
     "name": "Lars Gyrup Brink Nielsen",
