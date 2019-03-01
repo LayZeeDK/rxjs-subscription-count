@@ -17,7 +17,7 @@ export function subscriptionCount<T>(
   return (source: Observable<T>): Observable<T> => {
     let subscriptionCounter: number = 0;
 
-    return new Observable((observer: PartialObserver<T>): () => void => {
+    return new Observable((observer: PartialObserver<T>): (() => void) => {
       const innerSubscription: Subscription = source.subscribe(observer);
       subscriptionCounter += 1;
       notifyObserver(subscriptionCounter, counterObserver);
